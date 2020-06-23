@@ -52,6 +52,14 @@ class GCNLayer(nn.Module):
         if batchnorm:
             self.bn_layer = nn.BatchNorm1d(out_feats)
 
+    def reset_parameters(self):
+        """Reinitialize model parameters."""
+        self.graph_conv.reset_parameters()
+        if self.residual:
+            self.res_connection.reset_parameters()
+        if self.bn:
+            self.bn_layer.reset_parameters()
+
     def forward(self, g, feats):
         """Update node representations.
 
@@ -92,9 +100,9 @@ class GCN(nn.Module):
         ``len(hidden_feats)`` equals the number of GCN layers.  By default, we use
         ``[64, 64]``.
     activation : list of activation functions or None
-        If None, no activation will be applied. If not None, ``activation[i]`` gives the
-        activation function to be used for the i-th GCN layer. ``len(activation)`` equals
-        the number of GCN layers. By default, ReLU is applied for all GCN layers.
+        If not None, ``activation[i]`` gives the activation function to be used for
+        the i-th GCN layer. ``len(activation)`` equals the number of GCN layers.
+        By default, ReLU is applied for all GCN layers.
     residual : list of bool
         ``residual[i]`` decides if residual connection is to be used for the i-th GCN layer.
         ``len(residual)`` equals the number of GCN layers. By default, residual connection
@@ -136,6 +144,11 @@ class GCN(nn.Module):
             self.gnn_layers.append(GCNLayer(in_feats, hidden_feats[i], activation[i],
                                             residual[i], batchnorm[i], dropout[i]))
             in_feats = hidden_feats[i]
+
+    def reset_parameters(self):
+        """Reinitialize model parameters."""
+        for gnn in self.gnn_layers:
+            gnn.reset_parameters()
 
     def forward(self, g, feats):
         """Update node representations.
